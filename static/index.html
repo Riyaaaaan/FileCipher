@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Binary File Encryptor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
+
+:root {
+--bg:       #060606;
+--panel:    #0d0d0d;
+--border:   #1a3a1a;
+--green:    #4ade80;
+--green2:   #16a34a;
+--dim:      #2d6a3f;
+--dimmer:   #1e4d2e;
+--text:     #f0fdf4;
+--muted:    #86efac;
+--red:      #f87171;
+--blue:     #60a5fa;
+--yellow:   #fbbf24;
+--purple:   #c084fc;
+--mono:     ‘Share Tech Mono’, ‘Courier New’, monospace;
+--head:     ‘Orbitron’, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(--bg);
+background-image:
+radial-gradient(ellipse at 15% 50%, rgba(22,163,74,.05) 0%, transparent 55%),
+radial-gradient(ellipse at 85% 20%, rgba(74,222,128,.04) 0%, transparent 50%);
+color: var(--text);
+font-family: var(--mono);
+min-height: 100vh;
+padding: 28px 16px 48px;
+}
+
+.wrap { max-width: 780px; margin: 0 auto; }
+
+/* ── Header ── */
+header { border-left: 3px solid var(--green2); padding-left: 16px; margin-bottom: 28px; }
+header .sub  { font-size: 10px; color: var(--dimmer); letter-spacing: 4px; margin-bottom: 6px; }
+header h1    { font-family: var(--head); font-size: 28px; line-height: 1.1; color: var(--text); letter-spacing: 2px; }
+header h1 span { color: var(--green); }
+header .libs { font-size: 10px; color: #1e3d1e; letter-spacing: 2px; margin-top: 7px; }
+header .libs b { color: var(--dim); }
+
+/* ── Tabs ── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: #080808; border-radius: 4px 4px 0 0; overflow: hidden; }
+.tab-btn {
+flex: 1; padding: 10px 4px; font-size: 9px; letter-spacing: 1.5px;
+font-family: var(--mono); font-weight: 700; border: none; cursor: pointer;
+background: transparent; color: var(--dimmer); border-bottom: 2px solid transparent;
+transition: all .15s;
+}
+.tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #0f1f0f; }
+.tab-btn:hover:not(.active) { color: var(--muted); background: #0a120a; }
+
+/* ── Panel ── */
+.panel { background: var(--panel); border: 1px solid var(--border); border-top: none; border-radius: 0 0 4px 4px; padding: 22px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── Key input ── */
+.field-label { font-size: 9px; color: var(--dim); letter-spacing: 2px; display: block; margin-bottom: 6px; }
+input[type=text], textarea {
+width: 100%; background: #080808; border: 1px solid var(--border);
+color: var(--muted); font-family: var(--mono); font-size: 12px;
+padding: 8px 10px; outline: none; border-radius: 2px; line-height: 1.6;
+transition: border-color .2s;
+}
+input[type=text]:focus, textarea:focus { border-color: var(--dim); }
+textarea { resize: vertical; }
+
+.key-box { margin-bottom: 18px; }
+
+/* ── File drop zone ── */
+.dropzone {
+border: 1px dashed #1e4d2e; border-radius: 2px; padding: 16px;
+display: flex; align-items: center; gap: 14px; cursor: pointer;
+background: #080808; transition: border-color .2s; margin-bottom: 16px;
+}
+.dropzone:hover { border-color: var(--dim); }
+.dropzone-icon { font-size: 22px; }
+.dropzone-name { font-size: 12px; color: var(--dim); }
+.dropzone-name.loaded { color: var(--green); }
+.dropzone-size { font-size: 10px; color: var(--dimmer); margin-top: 2px; }
+
+/* ── Buttons ── */
+.btn {
+width: 100%; padding: 12px; font-family: var(--mono); font-weight: 700;
+font-size: 12px; letter-spacing: 2px; border: 1px solid; border-radius: 2px;
+cursor: pointer; transition: all .2s;
+}
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn-green  { background: var(--green2); border-color: var(--green); color: var(--text); }
+.btn-blue   { background: #1e3a8a;       border-color: var(--blue);  color: var(--text); }
+.btn-yellow { background: #78350f;       border-color: var(--yellow);color: #fef3c7; }
+.btn-purple { background: #581c87;       border-color: var(--purple);color: #faf5ff; }
+.btn-teal   { background: #0f2a1e;       border-color: var(--green2);color: var(--green); }
+.btn-sm {
+padding: 4px 10px; font-size: 9px; letter-spacing: 1px; font-family: var(--mono);
+background: transparent; border: 1px solid var(--border); color: var(--green);
+border-radius: 2px; cursor: pointer;
+}
+
+/* ── Download link ── */
+.download-link {
+display: block; margin-top: 10px; padding: 10px; text-align: center;
+background: #0a1a0a; border: 1px solid #166534; color: var(--green);
+font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
+text-decoration: none; border-radius: 2px;
+}
+.download-link.blue { border-color: #1e3a8a; color: var(--blue); background: #0a0e1a; }
+
+/* ── Description text ── */
+.desc { font-size: 10px; color: #2d5a2d; margin-bottom: 14px; line-height: 1.7; }
+.desc b { color: var(--green); }
+.desc code { color: var(--muted); }
+
+/* ── Toggle ── */
+.mode-toggle { display: flex; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+.mode-btn {
+flex: 1; padding: 8px; font-size: 10px; letter-spacing: 2px; font-family: var(--mono);
+font-weight: 700; border: none; cursor: pointer; background: #080808;
+color: var(--dimmer); transition: all .15s;
+}
+.mode-btn.active-green { background: var(--green2); color: var(--text); }
+.mode-btn.active-blue  { background: #1e3a8a;       color: var(--text); }
+
+/* ── Output boxes ── */
+.output-box {
+background: #080808; border: 1px solid #166534; border-radius: 2px;
+padding: 10px; font-family: var(--mono); font-size: 12px; color: var(--green);
+line-height: 1.7; word-break: break-all; max-height: 150px; overflow-y: auto;
+margin-top: 10px;
+}
+.output-box.blue { border-color: #1e3a8a; color: var(--blue); }
+.output-hint { font-size: 9px; color: var(--dimmer); margin-top: 6px; font-family: var(--mono); }
+
+.hex-output {
+margin-top: 12px; background: #080808; border: 1px solid #1a2e0a;
+padding: 10px; max-height: 220px; overflow-y: auto; font-size: 11px;
+font-family: var(--mono); color: var(--yellow); line-height: 1.7;
+border-radius: 2px; white-space: pre;
+}
+
+/* ── Analyze ── */
+.stats-grid {
+display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+}
+.stat-card {
+background: #080810; border: 1px solid #2d1a4d; border-radius: 2px; padding: 12px;
+}
+.stat-card-title { font-size: 8px; color: #7e22ce; letter-spacing: 2px; margin-bottom: 8px; }
+.stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+.stat-key { color: #6b21a8; }
+.stat-val { color: var(--purple); font-weight: 700; }
+
+.bar-row { margin-bottom: 5px; }
+.bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+.bar-track { height: 3px; background: #1a2e1a; border-radius: 1px; }
+.bar-fill  { height: 100%; background: linear-gradient(90deg, var(--green2), var(--green)); border-radius: 1px; transition: width .6s; }
+
+.chart-img { width: 100%; border-radius: 2px; border: 1px solid var(--border); margin-top: 12px; display: block; }
+.chart-label { font-size: 9px; color: var(--dimmer); letter-spacing: 2px; margin-top: 8px; }
+
+/* ── Log ── */
+.log-wrap { margin-top: 18px; }
+.log-title { font-size: 9px; color: var(--dimmer); letter-spacing: 3px; margin-bottom: 6px; }
+.log-box {
+background: #0a0a0a; border: 1px solid var(--border); border-radius: 2px;
+font-family: var(--mono); font-size: 11px; color: var(--green);
+padding: 10px; height: 130px; overflow-y: auto; line-height: 1.7;
+}
+.log-line { margin: 0; }
+.log-time { color: var(--dimmer); margin-right: 8px; }
+.log-ok   { color: var(--green); }
+.log-err  { color: var(--red); }
+.log-info { color: var(--blue); }
+.log-warn { color: var(--yellow); }
+.log-idle { color: var(--dimmer); }
+
+footer { margin-top: 16px; display: flex; justify-content: space-between; font-size: 9px; color: #1a3a1a; letter-spacing: 1.5px; }
+
+.spinner { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #080808; }
+::-webkit-scrollbar-thumb { background: #1a3a1a; border-radius: 2px; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+
+  <header>
+    <div class="sub">PYTHON · FLASK · SCIENTIFIC STACK</div>
+    <h1>BINARY FILE<br><span>ENCRYPTOR</span></h1>
+    <div class="libs">
+      <b>numpy</b> · XOR cipher &amp; statistics &nbsp;|&nbsp;
+      <b>pandas</b> · DataFrame describe() &nbsp;|&nbsp;
+      <b>matplotlib</b> · live charts
+    </div>
+  </header>
+
+  <!-- Tabs -->
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('encrypt')">🔒 ENCRYPT</button>
+    <button class="tab-btn" onclick="switchTab('decrypt')">🔓 DECRYPT</button>
+    <button class="tab-btn" onclick="switchTab('text')">📝 TEXT CIPHER</button>
+    <button class="tab-btn" onclick="switchTab('hex')">HEX DUMP</button>
+    <button class="tab-btn" onclick="switchTab('analyze')">📊 ANALYZE</button>
+    <button class="tab-btn" onclick="switchTab('test')">TEST FILE</button>
+  </div>
+
+  <div class="panel">
+
+<!-- Shared key input -->
+<div class="key-box">
+  <label class="field-label">ENCRYPTION KEY (comma-separated integers 0-255)</label>
+  <input type="text" id="keyInput" value="73, 42, 199, 88, 21, 156, 240, 9, 67, 134"/>
+</div>
+
+<!-- ── ENCRYPT ── -->
+<div id="tab-encrypt" class="section active">
+  <p class="desc">
+    Encrypts any file using <b>XOR bitwise cipher</b> — <code>np.bitwise_xor(data, key_tiled)</code>.<br>
+    Key is tiled with <b>np.tile()</b> to match file length, then applied element-wise.
+  </p>
+  <div class="dropzone" onclick="document.getElementById('encFile').click()">
+    <div class="dropzone-icon">📁</div>
+    <div>
+      <div class="dropzone-name" id="encFileName">Click to select file</div>
+      <div class="dropzone-size" id="encFileSize"></div>
+    </div>
+    <input type="file" id="encFile" style="display:none" onchange="onFileSelect(this,'enc')"/>
+  </div>
+  <button class="btn btn-green" id="encBtn" onclick="doEncrypt()" disabled>▶ ENCRYPT FILE</button>
+  <a class="download-link" id="encDownload" style="display:none" href="#" download>⬇ DOWNLOAD ENCRYPTED FILE</a>
+</div>
+
+<!-- ── DECRYPT ── -->
+<div id="tab-decrypt" class="section">
+  <p class="desc">
+    XOR is <b>symmetric</b> — decryption is identical to encryption with the same key.<br>
+    Load a <code>.enc</code> file, use the same key, and the original bytes are restored.
+  </p>
+  <div class="dropzone" onclick="document.getElementById('decFile').click()">
+    <div class="dropzone-icon">📁</div>
+    <div>
+      <div class="dropzone-name" id="decFileName">Click to select encrypted file</div>
+      <div class="dropzone-size" id="decFileSize"></div>
+    </div>
+    <input type="file" id="decFile" style="display:none" onchange="onFileSelect(this,'dec')"/>
+  </div>
+  <button class="btn btn-blue" id="decBtn" onclick="doDecrypt()" disabled>▶ DECRYPT FILE</button>
+  <a class="download-link blue" id="decDownload" style="display:none" href="#" download>⬇ DOWNLOAD DECRYPTED FILE</a>
+</div>
+
+<!-- ── TEXT CIPHER ── -->
+<div id="tab-text" class="section">
+  <p class="desc">
+    Encrypt plain text → <b>Base64 ciphertext</b> using <code>np.frombuffer(text.encode())</code> + XOR.<br>
+    Paste the ciphertext back to decrypt. No file needed.
+  </p>
+  <div class="mode-toggle">
+    <button class="mode-btn active-green" id="modeEncBtn" onclick="setTextMode('encrypt')">🔒 ENCRYPT TEXT</button>
+    <button class="mode-btn" id="modeDecBtn" onclick="setTextMode('decrypt')">🔓 DECRYPT TEXT</button>
+  </div>
+  <label class="field-label" id="textInputLabel">PLAINTEXT INPUT</label>
+  <textarea id="textInput" rows="4" placeholder="Type or paste your text here..."></textarea>
+  <button class="btn btn-green" id="textBtn" style="margin-top:10px" onclick="doTextCipher()">▶ ENCRYPT TEXT</button>
+  <div id="textResultWrap" style="display:none;margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span class="field-label" id="textOutputLabel">BASE64 CIPHERTEXT</span>
+      <button class="btn-sm" onclick="copyText()">COPY</button>
+    </div>
+    <div class="output-box" id="textOutput"></div>
+    <div class="output-hint" id="textOutputHint"></div>
+  </div>
+</div>
+
+<!-- ── HEX DUMP ── -->
+<div id="tab-hex" class="section">
+  <p class="desc">
+    Renders a classic hex dump using <b>np.frombuffer()</b>.<br>
+    Shows offset, hex bytes, and ASCII — mirrors <code>xxd</code> output.
+  </p>
+  <div class="dropzone" onclick="document.getElementById('hexFile').click()">
+    <div class="dropzone-icon">📁</div>
+    <div>
+      <div class="dropzone-name" id="hexFileName">Click to select file</div>
+      <div class="dropzone-size" id="hexFileSize"></div>
+    </div>
+    <input type="file" id="hexFile" style="display:none" onchange="onFileSelect(this,'hex')"/>
+  </div>
+  <button class="btn btn-yellow" id="hexBtn" onclick="doHex()" disabled>▶ GENERATE HEX DUMP</button>
+  <div class="hex-output" id="hexOutput" style="display:none"></div>
+</div>
+
+<!-- ── ANALYZE ── -->
+<div id="tab-analyze" class="section">
+  <p class="desc">
+    Full statistical analysis: <b>pandas</b> <code>df.describe()</code>, <b>numpy</b> entropy &amp; unique counts,
+    and three <b>matplotlib</b> charts: histogram, bar chart, rolling mean.
+  </p>
+  <div class="dropzone" onclick="document.getElementById('anaFile').click()">
+    <div class="dropzone-icon">📁</div>
+    <div>
+      <div class="dropzone-name" id="anaFileName">Click to select file</div>
+      <div class="dropzone-size" id="anaFileSize"></div>
+    </div>
+    <input type="file" id="anaFile" style="display:none" onchange="onFileSelect(this,'ana')"/>
+  </div>
+  <button class="btn btn-purple" id="anaBtn" onclick="doAnalyze()" disabled>▶ ANALYZE FILE</button>
+  <div id="anaResults" style="display:none;margin-top:16px">
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-title">PANDAS — df.describe()</div>
+        <div id="pandasStats"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">NUMPY — np.unique() / ENTROPY</div>
+        <div id="numpyStats"></div>
+      </div>
+    </div>
+
+    <div class="chart-label">MATPLOTLIB — plt.hist() · BYTE FREQUENCY DISTRIBUTION</div>
+    <img class="chart-img" id="chartHist" src="" alt="histogram"/>
+
+    <div class="chart-label" style="margin-top:14px">MATPLOTLIB — plt.bar() · TOP 20 MOST FREQUENT BYTES</div>
+    <img class="chart-img" id="chartBar" src="" alt="bar chart"/>
+
+    <div class="chart-label" style="margin-top:14px">MATPLOTLIB — plt.plot() · RAW BYTES + pandas rolling().mean()</div>
+    <img class="chart-img" id="chartLine" src="" alt="line chart"/>
+
+  </div>
+</div>
+
+<!-- ── TEST FILE ── -->
+<div id="tab-test" class="section">
+  <p class="desc">
+    Generate an in-memory test file using <b>np.frombuffer()</b>.<br>
+    Edit the content, create it, then download and use it in the other tabs.
+  </p>
+  <label class="field-label">FILE CONTENT</label>
+  <textarea id="testContent" rows="5">Hello, World! This is a test file.
+Binary encryption demo using NumPy + Pandas + Matplotlib.
+Python: os, sys, array, numpy, pandas, matplotlib.</textarea>
+<button class="btn btn-teal" style="margin-top:10px" onclick="doCreateTest()">▶ CREATE TEST FILE</button>
+<a class="download-link" id="testDownload" style="display:none" href="#" download="test.txt">⬇ DOWNLOAD test.txt</a>
+</div>
+
+  </div><!-- /panel -->
+
+  <!-- Log -->
+
+  <div class="log-wrap">
+    <div class="log-title">SYSTEM LOG</div>
+    <div class="log-box" id="logBox">
+      <p class="log-line log-idle">> Awaiting operation...</p>
+    </div>
+  </div>
+
+  <footer>
+    <span>numpy · pandas · matplotlib · flask</span>
+    <span id="dateStr"></span>
+    <span>XOR SYMMETRIC CIPHER</span>
+  </footer>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const files = { enc: null, dec: null, hex: null, ana: null };
+let textMode = "encrypt";
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  event.target.classList.add("active");
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function log(msg, type = "ok") {
+  const box = document.getElementById("logBox");
+  const idle = box.querySelector(".log-idle");
+  if (idle) idle.remove();
+  const now = new Date();
+  const t = [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2,"0")).join(":");
+  const p = document.createElement("p");
+  p.className = `log-line log-${type}`;
+  p.innerHTML = `<span class="log-time">[${t}]</span>${msg}`;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── File select ───────────────────────────────────────────────────────────────
+function onFileSelect(input, key) {
+  const file = input.files[0];
+  if (!file) return;
+  files[key] = file;
+  document.getElementById(key + "FileName").textContent = file.name;
+  document.getElementById(key + "FileName").classList.add("loaded");
+  document.getElementById(key + "FileSize").textContent = file.size.toLocaleString() + " bytes";
+  document.getElementById(key + "Btn").disabled = false;
+  log(`Loaded "${file.name}" — ${file.size} bytes`, "info");
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  if (loading) btn.innerHTML = '<span class="spinner">⟳</span> PROCESSING...';
+}
+
+// ── Encrypt ───────────────────────────────────────────────────────────────────
+async function doEncrypt() {
+  const file = files.enc;
+  if (!file) return;
+  setLoading("encBtn", true);
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("key", document.getElementById("keyInput").value);
+  fd.append("mode", "encrypt");
+  try {
+    const res = await fetch("/api/encrypt", { method: "POST", body: fd });
+    const d = await res.json();
+    if (d.error) { log(d.error, "err"); return; }
+    const bytes = Uint8Array.from(atob(d.result_b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes]);
+    const url = URL.createObjectURL(blob);
+    const a = document.getElementById("encDownload");
+    a.href = url;
+    a.download = d.filename + ".enc";
+    a.textContent = `⬇ DOWNLOAD ${d.filename}.enc (${bytes.length} bytes)`;
+    a.style.display = "block";
+    log(`np.bitwise_xor() complete — "${d.filename}" → ${d.original_size} bytes encrypted`, "ok");
+  } catch(e) { log("Request failed: " + e, "err"); }
+  finally { document.getElementById("encBtn").disabled = false; document.getElementById("encBtn").innerHTML = "▶ ENCRYPT FILE"; }
+}
+
+// ── Decrypt ───────────────────────────────────────────────────────────────────
+async function doDecrypt() {
+  const file = files.dec;
+  if (!file) return;
+  setLoading("decBtn", true);
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("key", document.getElementById("keyInput").value);
+  fd.append("mode", "decrypt");
+  try {
+    const res = await fetch("/api/encrypt", { method: "POST", body: fd });
+    const d = await res.json();
+    if (d.error) { log(d.error, "err"); return; }
+    const bytes = Uint8Array.from(atob(d.result_b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes]);
+    const url = URL.createObjectURL(blob);
+    const a = document.getElementById("decDownload");
+    a.href = url;
+    a.download = d.filename.replace(".enc","") + ".dec";
+    a.textContent = `⬇ DOWNLOAD decrypted file (${bytes.length} bytes)`;
+    a.style.display = "block";
+    log(`XOR decryption complete — "${d.filename}" → ${d.original_size} bytes restored`, "ok");
+  } catch(e) { log("Request failed: " + e, "err"); }
+  finally { document.getElementById("decBtn").disabled = false; document.getElementById("decBtn").innerHTML = "▶ DECRYPT FILE"; }
+}
+
+// ── Text Cipher ───────────────────────────────────────────────────────────────
+function setTextMode(mode) {
+  textMode = mode;
+  document.getElementById("textInput").value = "";
+  document.getElementById("textResultWrap").style.display = "none";
+  if (mode === "encrypt") {
+    document.getElementById("modeEncBtn").className = "mode-btn active-green";
+    document.getElementById("modeDecBtn").className = "mode-btn";
+    document.getElementById("textInputLabel").textContent = "PLAINTEXT INPUT";
+    document.getElementById("textBtn").textContent = "▶ ENCRYPT TEXT";
+    document.getElementById("textBtn").className = "btn btn-green";
+    document.getElementById("textInput").placeholder = "Type or paste your text here...";
+  } else {
+    document.getElementById("modeEncBtn").className = "mode-btn";
+    document.getElementById("modeDecBtn").className = "mode-btn active-blue";
+    document.getElementById("textInputLabel").textContent = "BASE64 CIPHERTEXT INPUT";
+    document.getElementById("textBtn").textContent = "▶ DECRYPT TEXT";
+    document.getElementById("textBtn").className = "btn btn-blue";
+    document.getElementById("textInput").placeholder = "Paste Base64 ciphertext here...";
+  }
+}
+
+async function doTextCipher() {
+  const text = document.getElementById("textInput").value.trim();
+  if (!text) { log("No text entered.", "err"); return; }
+  try {
+    const res = await fetch("/api/encrypt_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, key: document.getElementById("keyInput").value, mode: textMode })
+    });
+    const d = await res.json();
+    if (d.error) { log(d.error, "err"); return; }
+    const out = document.getElementById("textOutput");
+    out.textContent = d.result;
+    out.className = "output-box" + (textMode === "decrypt" ? " blue" : "");
+    document.getElementById("textOutputLabel").textContent = textMode === "encrypt" ? "BASE64 CIPHERTEXT" : "DECRYPTED PLAINTEXT";
+    document.getElementById("textOutputHint").textContent = textMode === "encrypt"
+      ? `${d.result.length} chars · np.frombuffer() + np.bitwise_xor() + base64.b64encode()`
+      : `${d.result.length} chars · base64.b64decode() + np.bitwise_xor() → utf-8`;
+    document.getElementById("textResultWrap").style.display = "block";
+    log(`Text ${textMode}ed — ${d.bytes} bytes processed via NumPy`, "ok");
+  } catch(e) { log("Request failed: " + e, "err"); }
+}
+
+function copyText() {
+  navigator.clipboard.writeText(document.getElementById("textOutput").textContent);
+  log("Output copied to clipboard.", "info");
+}
+
+// ── Hex Dump ─────────────────────────────────────────────────────────────────
+async function doHex() {
+  const file = files.hex;
+  if (!file) return;
+  setLoading("hexBtn", true);
+  const fd = new FormData();
+  fd.append("file", file);
+  try {
+    const res = await fetch("/api/hexdump", { method: "POST", body: fd });
+    const d = await res.json();
+    const box = document.getElementById("hexOutput");
+    box.textContent = d.dump + (d.total_bytes > 512 ? `\n\n... (showing first 512 of ${d.total_bytes} bytes)` : "");
+    box.style.display = "block";
+    log(`Hex dump — np.frombuffer() parsed ${d.total_bytes} bytes`, "info");
+  } catch(e) { log("Request failed: " + e, "err"); }
+  finally { document.getElementById("hexBtn").disabled = false; document.getElementById("hexBtn").innerHTML = "▶ GENERATE HEX DUMP"; }
+}
+
+// ── Analyze ───────────────────────────────────────────────────────────────────
+async function doAnalyze() {
+  const file = files.ana;
+  if (!file) return;
+  setLoading("anaBtn", true);
+  const fd = new FormData();
+  fd.append("file", file);
+  try {
+    const res = await fetch("/api/analyze", { method: "POST", body: fd });
+    const d = await res.json();
+
+    // Pandas describe
+    const pd = d.pandas_describe;
+    document.getElementById("pandasStats").innerHTML = Object.entries(pd).map(([k,v]) =>
+      `<div class="stat-row"><span class="stat-key">${k}</span><span class="stat-val">${v}</span></div>`
+    ).join("");
+
+    // NumPy stats
+    const ns = d.numpy_stats;
+    document.getElementById("numpyStats").innerHTML = `
+      <div class="stat-row"><span class="stat-key">unique bytes</span><span class="stat-val">${ns.unique_bytes}</span></div>
+      <div class="stat-row"><span class="stat-key">most common</span><span class="stat-val">0x${ns.most_common_byte.toString(16).toUpperCase().padStart(2,"0")} (×${ns.most_common_count})</span></div>
+      <div class="stat-row"><span class="stat-key">entropy</span><span class="stat-val">${ns.entropy.toFixed(4)} bits</span></div>
+    `;
+
+    // Charts
+    document.getElementById("chartHist").src = "data:image/png;base64," + d.charts.histogram;
+    document.getElementById("chartBar").src  = "data:image/png;base64," + d.charts.bar;
+    document.getElementById("chartLine").src = "data:image/png;base64," + d.charts.line;
+
+    document.getElementById("anaResults").style.display = "block";
+    log(`pandas.describe() + numpy.unique() + 3 matplotlib charts generated`, "ok");
+  } catch(e) { log("Request failed: " + e, "err"); }
+  finally { document.getElementById("anaBtn").disabled = false; document.getElementById("anaBtn").innerHTML = "▶ ANALYZE FILE"; }
+}
+
+// ── Test File ─────────────────────────────────────────────────────────────────
+async function doCreateTest() {
+  const content = document.getElementById("testContent").value;
+  try {
+    const res = await fetch("/api/create_test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content })
+    });
+    const d = await res.json();
+    const bytes = Uint8Array.from(atob(d.b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.getElementById("testDownload");
+    a.href = url;
+    a.textContent = `⬇ DOWNLOAD test.txt (${d.size} bytes)`;
+    a.style.display = "block";
+    log(`Test file created — np.frombuffer() encoded ${d.size} bytes`, "ok");
+  } catch(e) { log("Request failed: " + e, "err"); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById("dateStr").textContent = new Date().toISOString().split("T")[0];
+</script>
+
+</body>
+</html>
